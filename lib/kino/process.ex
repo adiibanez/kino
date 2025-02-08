@@ -19,6 +19,8 @@ defmodule Kino.Process do
   @type trace_target :: :all | pid() | [pid()]
   @type label_response :: {:ok, String.t()} | :continue
 
+  @default_excluded_apps [:stdlib, :kernel, :elixir]
+
   @doc """
   Generates a visualization of an application tree.
 
@@ -37,6 +39,8 @@ defmodule Kino.Process do
 
     * `:caption` - an optional caption for the diagram. Either a custom
       caption as string, or `nil` to disable the default caption.
+
+    * `:exclude_atoms` - an optional filter
 
   ## Examples
 
@@ -546,6 +550,9 @@ defmodule Kino.Process do
     |> convert_direction()
   end
 
+  defp exclude_apps_from_opts(opts),
+    do: opts |> Keyword.get(:exclude_apps, @default_excluded_apps)
+
   defp traverse_supervisor(supervisor, opts) when is_pid(supervisor) do
     supervisor_children =
       try do
@@ -558,7 +565,7 @@ defmodule Kino.Process do
     root_node = graph_node(0, :root, supervisor, :supervisor)
 
     supervisor_children
-    |> traverse_processes(root_node, {%{}, 1, %{root_node.pid => root_node}})
+    |> traverse_processes(root_node, {%{}, 1, %{root_node.pid => root_node}}, opts)
     |> maybe_traverse_ets_tables(opts)
     |> traverse_links()
     |> Enum.map_join("\n", fn {_pid_pair, edge} ->
@@ -575,49 +582,69 @@ defmodule Kino.Process do
   defp traverse_processes(
          [{id, :undefined, type, _} | rest],
          parent_node,
-         {rels, idx, resource_keys}
+         {rels, idx, resource_keys},
+         opts \\ []
        ) do
     child_node = graph_node(idx, id, :undefined, type)
     connection = graph_edge(parent_node, child_node, :supervisor)
 
-    traverse_processes(rest, parent_node, {add_rel(rels, connection), idx + 1, resource_keys})
+    traverse_processes(
+      rest,
+      parent_node,
+      {add_rel(rels, connection), idx + 1, resource_keys},
+      opts
+    )
   end
 
   defp traverse_processes(
          [{id, pid, :supervisor, _} | rest],
          parent_node,
-         {rels, idx, resource_keys}
+         {rels, idx, resource_keys},
+         opts
        ) do
-    child_node = graph_node(idx, id, pid, :supervisor)
-    connection = graph_edge(parent_node, child_node, :supervisor)
-    resource_keys = Map.put(resource_keys, pid, child_node)
+    {:ok, app} = :application.get_application(pid)
 
-    children = Supervisor.which_children(pid)
+    if app in [:kernel, :stdlib] do
+      # Skip this supervisor and move to next
+      traverse_processes(rest, parent_node, {rels, idx, resource_keys}, opts)
+    else
+      child_node = graph_node(idx, id, pid, :supervisor)
+      connection = graph_edge(parent_node, child_node, :supervisor)
+      resource_keys = Map.put(resource_keys, pid, child_node)
 
-    {subtree_rels, idx, resource_keys} =
-      traverse_processes(children, child_node, {%{}, idx + 1, resource_keys})
+      children = Supervisor.which_children(pid)
 
-    updated_rels =
-      rels
-      |> add_rels(subtree_rels)
-      |> add_rel(connection)
+      {subtree_rels, idx, resource_keys} =
+        traverse_processes(children, child_node, {%{}, idx + 1, resource_keys}, opts)
 
-    traverse_processes(rest, parent_node, {updated_rels, idx, resource_keys})
+      updated_rels =
+        rels
+        |> add_rels(subtree_rels)
+        |> add_rel(connection)
+
+      traverse_processes(rest, parent_node, {updated_rels, idx, resource_keys}, opts)
+    end
   end
 
   defp traverse_processes(
          [{id, pid, :worker, _} | rest],
          parent_node,
-         {rels, idx, resource_keys}
+         {rels, idx, resource_keys},
+         opts
        ) do
     child_node = graph_node(idx, id, pid, :worker)
     connection = graph_edge(parent_node, child_node, :supervisor)
     resource_keys = Map.put(resource_keys, pid, child_node)
 
-    traverse_processes(rest, parent_node, {add_rel(rels, connection), idx + 1, resource_keys})
+    traverse_processes(
+      rest,
+      parent_node,
+      {add_rel(rels, connection), idx + 1, resource_keys},
+      opts
+    )
   end
 
-  defp traverse_processes([], _, acc) do
+  defp traverse_processes([], _, acc, opts) do
     acc
   end
 

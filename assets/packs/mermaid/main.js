@@ -8,6 +8,9 @@ export function init(ctx, { diagram, caption, download }) {
 
   function render() {
     mermaid.render("diagram", diagram).then(({ svg, bindFunctions }) => {
+      
+      console.log("Mermaid diagram", diagram);
+      
       // Fix for: https://github.com/mermaid-js/mermaid/issues/1766
       svg = svg.replace(/<br>/gi, "<br/>");
 

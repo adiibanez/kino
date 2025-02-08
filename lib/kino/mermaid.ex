@@ -38,6 +38,8 @@ defmodule Kino.Mermaid do
   @spec new(binary(), keyword()) :: t()
   def new(diagram, opts \\ []) do
     opts = Keyword.validate!(opts, caption: nil, download: true)
+    
+    diagram |> dbg()
 
     Kino.JS.new(
       __MODULE__,

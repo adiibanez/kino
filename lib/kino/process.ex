@@ -550,8 +550,10 @@ defmodule Kino.Process do
     |> convert_direction()
   end
 
-  defp exclude_apps_from_opts(opts),
-    do: opts |> Keyword.get(:exclude_apps, @default_excluded_apps)
+  defp exclude_apps_from_opts(opts) do
+    IO.puts("exclude apps: #{inspect(opts[:exclude_apps])}")
+    opts |> Map.get(:exclude_apps, @default_excluded_apps)
+  end
 
   defp traverse_supervisor(supervisor, opts) when is_pid(supervisor) do
     supervisor_children =
@@ -583,7 +585,7 @@ defmodule Kino.Process do
          [{id, :undefined, type, _} | rest],
          parent_node,
          {rels, idx, resource_keys},
-         opts \\ []
+         opts
        ) do
     child_node = graph_node(idx, id, :undefined, type)
     connection = graph_edge(parent_node, child_node, :supervisor)
@@ -604,7 +606,7 @@ defmodule Kino.Process do
        ) do
     {:ok, app} = :application.get_application(pid)
 
-    if app in [:kernel, :stdlib] do
+    if app in exclude_apps_from_opts(opts) do
       # Skip this supervisor and move to next
       traverse_processes(rest, parent_node, {rels, idx, resource_keys}, opts)
     else

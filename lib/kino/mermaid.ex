@@ -38,12 +38,14 @@ defmodule Kino.Mermaid do
   @spec new(binary(), keyword()) :: t()
   def new(diagram, opts \\ []) do
     opts = Keyword.validate!(opts, caption: nil, download: true)
-    
-    case File.write("/tmp/mermaid.txt", diagram) do
+    file_path = "/tmp/mermaid.txt"
+
+    case File.write(file_path, diagram) do
       :ok ->
-        IO.puts "Successfully wrote to #{file_path}"
+        IO.puts("Successfully wrote to #{file_path}")
+
       {:error, reason} ->
-        IO.puts "Error writing to #{file_path}: #{reason}"
+        IO.puts("Error writing to #{file_path}: #{reason}")
     end
 
     Kino.JS.new(

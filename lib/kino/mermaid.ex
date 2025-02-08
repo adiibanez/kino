@@ -39,7 +39,12 @@ defmodule Kino.Mermaid do
   def new(diagram, opts \\ []) do
     opts = Keyword.validate!(opts, caption: nil, download: true)
     
-    diagram |> dbg()
+    case File.write("/tmp/mermaid.txt", diagram) do
+      :ok ->
+        IO.puts "Successfully wrote to #{file_path}"
+      {:error, reason} ->
+        IO.puts "Error writing to #{file_path}: #{reason}"
+    end
 
     Kino.JS.new(
       __MODULE__,

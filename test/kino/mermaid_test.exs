@@ -14,4 +14,10 @@ defmodule Kino.MermaidTest do
 
     assert export(kino) == {"mermaid", content}
   end
+
+  test "large mermaid chart" do
+    {:ok, content} = File.read("/tmp/mermaid.txt")
+    kino = Kino.Mermaid.new(content)
+    assert export(kino) == {"mermaid", content}
+  end
 end

@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import DataEditor, {
   GridCellKind,
+  // EditableGridCell,
+  // Item,
   GridColumnIcon,
   CompactSelection,
   withAlpha,
@@ -288,11 +290,31 @@ export function App({ ctx, data }) {
         displayData: cellData,
         allowOverlay: true,
         allowWrapping: false,
-        readonly: true,
+        readonly: false,
       };
     },
     [content],
   );
+
+// const onCellEdited = useCallback((cell: Item, newValue: EditableGridCell) => {
+  const onCellEdited = useCallback((cell, newValue) => {
+
+    if (newValue.kind !== GridCellKind.Text) {
+        // we only have text cells, might as well just die here.
+        return;
+    }
+
+    console.log("onCellEdited", cell, newValue, data);
+    ctx.pushEvent("cell_edited", { cell, newValue });
+
+    const [col, row] = cell;
+    // console.log("data", data[row]);
+    /*const indexes: (keyof DummyItem)[] = ["name", "company", "email", "phone"];
+    const [col, row] = cell;
+    const key = indexes[col];
+    data[row][key] = newValue.data;*/
+}, []);
+
 
   const toggleSearch = () => {
     setShowSearch(!showSearch);
@@ -491,6 +513,8 @@ export function App({ ctx, data }) {
           onHeaderClicked={onHeaderClicked}
           showSearch={showSearch}
           getCellsForSelection={true}
+          onCellEdited={onCellEdited}
+          onPaste={true}
           onSearchClose={toggleSearch}
           headerIcons={customHeaderIcons}
           overscrollX={100}

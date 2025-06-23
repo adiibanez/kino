@@ -73,7 +73,9 @@ defmodule Kino.Table do
   """
   @callback on_update(update_arg :: term(), state :: state()) :: {:ok, state()}
 
-  @optional_callbacks export_data: 3, on_update: 2
+  @callback cell_edited(payload :: map(), ctx :: any()) :: any()
+
+  @optional_callbacks export_data: 3, on_update: 2, cell_edited: 2
 
   use Kino.JS, assets_path: "lib/assets/data_table/build"
   use Kino.JS.Live
@@ -191,6 +193,14 @@ defmodule Kino.Table do
   def handle_event("relocate", %{"from_index" => from_index, "to_index" => to_index}, ctx) do
     relocates = ctx.assigns.relocates ++ [%{from_index: from_index, to_index: to_index}]
     {:noreply, ctx |> assign(relocates: relocates) |> broadcast_update()}
+  end
+
+  def handle_event("cell_edited", payload, ctx) do
+    # def handle_cast("cell_edited", payload) do
+    IO.inspect(payload, label: "Cell edited payload")
+    # IO.inspect(ctx, label: "Cell edited ctx")
+    Kino.DataTable.cell_edited(payload, ctx)
+    {:noreply, ctx}
   end
 
   @impl true

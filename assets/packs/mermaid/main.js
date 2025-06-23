@@ -1,7 +1,7 @@
 import mermaid from "mermaid";
 import "./main.css";
 
-mermaid.initialize({ startOnLoad: false, maxTextSize: 900000, maxEdges: 5000 });
+mermaid.initialize({ startOnLoad: false, maxTextSize: 900000, maxEdges: 20000, securityLevel: "loose" });
 
 export function init(ctx, { diagram, caption, download }) {
   ctx.importCSS("main.css");

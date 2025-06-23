@@ -551,8 +551,8 @@ defmodule Kino.Process do
   end
 
   defp exclude_apps_from_opts(opts) do
-    IO.puts("exclude apps: #{inspect(opts[:exclude_apps])}")
-    opts |> Map.get(:exclude_apps, @default_excluded_apps)
+    # IO.puts("exclude apps: #{inspect(Keyword.get(opts, :exclude_apps))}")
+    Keyword.get(opts, :exclude_apps, @default_excluded_apps)
   end
 
   defp traverse_supervisor(supervisor, opts) when is_pid(supervisor) do
@@ -606,7 +606,14 @@ defmodule Kino.Process do
        ) do
     {:ok, app} = :application.get_application(pid)
 
+    # opts |> dbg()
+
+    IO.puts(
+      "Check if we should exclude app #{app} due to match ( #{inspect(app in exclude_apps_from_opts(opts))} in #{inspect(opts)}"
+    )
+
     if app in exclude_apps_from_opts(opts) do
+      IO.puts("Excluding app #{app} due to match in #{inspect(opts)}")
       # Skip this supervisor and move to next
       traverse_processes(rest, parent_node, {rels, idx, resource_keys}, opts)
     else
@@ -646,7 +653,7 @@ defmodule Kino.Process do
     )
   end
 
-  defp traverse_processes([], _, acc, opts) do
+  defp traverse_processes([], _, acc, _opts) do
     acc
   end
 

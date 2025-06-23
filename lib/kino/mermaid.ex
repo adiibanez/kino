@@ -39,6 +39,10 @@ defmodule Kino.Mermaid do
   def new(diagram, opts \\ []) do
     opts = Keyword.validate!(opts, caption: nil, download: true)
     file_path = "/tmp/mermaid.txt"
+    line_count = diagram |> String.split("\n") |> length()
+    char_count = String.length(diagram)
+    IO.puts("Mermaid line count: #{line_count}")
+    IO.puts("Mermaid character count: #{char_count}")
 
     case File.write(file_path, diagram) do
       :ok ->

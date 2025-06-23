@@ -121,6 +121,7 @@ export function App({ ctx, data }) {
   const [columns, setColumns] = useState(columnsInitData);
   const [colSizes, setColSizes] = useState(columnsInitSize);
   const [menu, setMenu] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
   const [selection, setSelection] = useState(emptySelection);
   const [rowMarkerOffset, setRowMarkerOffset] = useState(0);
   const [hoverRows, setHoverRows] = useState(null);
@@ -346,7 +347,7 @@ export function App({ ctx, data }) {
   };
 
   const { layerProps, renderLayer } = useLayer({
-    isOpen: !!menu,
+    isOpen: showMenu,
     auto: true,
     placement: "bottom-end",
     possiblePlacements: ["bottom-end", "bottom-center", "bottom-start"],
@@ -462,6 +463,10 @@ export function App({ ctx, data }) {
       themeOverride: header.id === currentMenu ? themeOverride : null,
     }));
     setColumns(newColumns);
+    // We determine showMenu in the useEffect, so it is deferred to
+    // the next render cycle, otherwise the menu closes immediately
+    // in onOutsideClick. See the discussion in https://github.com/livebook-dev/kino/pull/213#discussion_r1033043059
+    setShowMenu(menu ? true : false);
   }, [menu]);
 
   return (
@@ -535,7 +540,7 @@ export function App({ ctx, data }) {
           onColumnMoved={hasRelocate ? onColumnMoved : undefined}
         />
       )}
-      {menu &&
+      {showMenu &&
         renderLayer(
           <HeaderMenu
             layerProps={layerProps}

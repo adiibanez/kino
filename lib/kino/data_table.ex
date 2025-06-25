@@ -203,6 +203,8 @@ defmodule Kino.DataTable do
     # Write ctx
     File.write!("/tmp/livebook_ctx.txt", ctx_dump)
 
+    ctx.assigns.state.edit_callback(payload)
+
     {:ok, ctx}
   end
 
